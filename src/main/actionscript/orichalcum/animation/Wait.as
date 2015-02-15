@@ -1,5 +1,7 @@
 package orichalcum.animation 
 {
+	import flash.events.Event;
+	import orichalcum.animation.core.Clock;
 	
 	public class Wait implements IDirective
 	{

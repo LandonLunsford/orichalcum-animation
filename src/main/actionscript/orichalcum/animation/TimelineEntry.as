@@ -1,7 +1,7 @@
 package orichalcum.animation 
 {
 	
-	public class TimelineEntry
+	internal class TimelineEntry
 	{
 		
 		internal var position:Number;

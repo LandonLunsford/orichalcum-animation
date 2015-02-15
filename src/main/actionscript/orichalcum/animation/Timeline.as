@@ -18,18 +18,17 @@ package orichalcum.animation
 		{
 			if (args.length == 0) return;
 			
-			var position:Number = args[0] is Number ? args[0] : insertionPosition;
-			
 			for each(var x:* in args)
 			{
-				if (x is IInstance)
+				var p:Number = args[0] is Number ? args[0] : insertionPosition;
+				if (x is IInterval)
 				{
-					_children.push(new TimelineEntry(position, x));
+					_children.push(new TimelineEntry(p, x));
+					insertionPosition = Math.max(insertionPosition, p + x.length());
 				}
-				else if (x is IInterval)
+				else if (x is IInstance)
 				{
-					_children.push(new TimelineEntry(position, x));
-					insertionPosition = Math.max(insertionPosition, position + x.length());
+					_children.push(new TimelineEntry(p, x));
 				}
 				else if (x is IDirective)
 				{
@@ -39,7 +38,7 @@ package orichalcum.animation
 				{
 					add.apply(this, x);
 				}
-			} 
+			}
 		}
 		
 		internal function get insertionPosition():Number
@@ -50,11 +49,11 @@ package orichalcum.animation
 		internal function set insertionPosition(value:Number):void
 		{
 			value = Math.max(0, (isNaN(value) ? 0 : value));
-			if (_insertionPosition == value) return;
+			if (_insertionPosition >= value) return;
 			_insertionPosition = value;
-			if (_insertionPosition > _duration)
+			if (_duration < value)
 			{
-				_duration = _insertionPosition;
+				_duration = value;
 			}
 		}
 		

@@ -11,26 +11,23 @@ package orichalcum.animation
 			add.apply(this, instancesAndIntervals);
 		}
 		
-		public function add(instanceOrInterval:*):void
+		public function add(...instancesAndIntervals):void
 		{
-			instancesAndIntervals.push(instanceOrInterval);
+			for each(var instanceOrInterval:* in instancesAndIntervals)
+			{
+				this.instancesAndIntervals.push(instanceOrInterval);
+			}
 		}
 		
 		public function apply(timeline:Timeline):void 
 		{
-			var maximumLength:Number = Number.MIN_VALUE;
+			//var maximumLength:Number = Number.MIN_VALUE;
+			const position:Number = timeline.insertionPosition;
 			for each(var x:* in instancesAndIntervals)
 			{
-				timeline.add(x);
-				
-				var currentLength:Number = x.length();
-				if (currentLength > maximumLength)
-				{
-					maximumLength = currentLength;
-				}
+				x is PlayableInterval && (x as PlayableInterval).pause();
+				timeline.add(position, x);
 			}
-			
-			timeline.insertionPosition += maximumLength;
 		}
 		
 	}

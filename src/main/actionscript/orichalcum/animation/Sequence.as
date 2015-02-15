@@ -11,22 +11,20 @@ package orichalcum.animation
 			add.apply(this, instancesAndIntervals);
 		}
 		
-		public function add(instanceOrInterval:*):void
+		public function add(...instancesAndIntervals):void
 		{
-			instancesAndIntervals.push(instanceOrInterval);
+			for each(var instanceOrInterval:* in instancesAndIntervals)
+			{
+				this.instancesAndIntervals.push(instanceOrInterval);
+			}
 		}
 		
 		public function apply(timeline:Timeline):void 
 		{
 			for each(var x:* in instancesAndIntervals)
 			{
+				x is PlayableInterval && (x as PlayableInterval).pause();
 				timeline.add(x);
-				
-				if (x is IInterval)
-				{
-					timeline.insertionPosition += x.length();
-				}
-				
 			}
 		}
 		

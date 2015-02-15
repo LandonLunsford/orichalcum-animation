@@ -30,8 +30,8 @@ package orichalcum.animation
 		{
 			//var i:int = 9;
 			var i:int = 1;
-			//var w:Boolean = false;
-			var w:Boolean = true;
+			var w:Boolean = false;
+			//var w:Boolean = true;
 			
 			//interval = timeline(
 				//init(target, {x: 300, y:300}),
@@ -65,23 +65,23 @@ package orichalcum.animation
 				
 			interval = timeline(
 				init(target, {x: 200, y: 200}),
-				wait(50),
+				//wait(50),
 				sequence(
 					tween(target)
 						.to( { x: 500 } )
-						.duration(50)
+						.duration(500)
 						.completed(fw('1'), bw('1')),
 					tween(target)
 						.to( { y: 500 } )
-						.duration(50)
+						.duration(500)
 						.completed(fw('2'), bw('2')),
 					tween(target)
 						.to( { x: 200 } )
-						.duration(50)
+						.duration(500)
 						.completed(fw('3'), bw('3')),
 					tween(target)
 						.to( { y: 200 } )
-						.duration(50)
+						.duration(500)
 						.completed(fw('4'), bw('4'))
 				),
 				call(fw('parent'))
