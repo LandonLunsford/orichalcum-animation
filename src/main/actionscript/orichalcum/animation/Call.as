@@ -3,26 +3,25 @@ package orichalcum.animation
 	
 	public class Call implements IInstance
 	{
+		public static const EMPTY:Call = new Call;
 		
 		private var _forwardCallback:Function;
 		private var _backwardCallback:Function
 		
-		public function Call(forwardCallabck:Function, backwardCallback:Function = null) 
+		public function Call(forwardCallabck:Function = null, backwardCallback:Function = null) 
 		{
-			_forwardCallback = forwardCallabck;
-			_backwardCallback = backwardCallback;
+			_forwardCallback = forwardCallabck || Functions.NOOP;
+			_backwardCallback = backwardCallback || Functions.NOOP;
 		}
 		
-		public function invoke(forward:Boolean):* 
+		public function forward():void 
 		{
-			if (forward)
-			{
-				_forwardCallback != null && _forwardCallback()
-			}
-			else
-			{
-				_backwardCallback != null && _backwardCallback();
-			}
+			_forwardCallback();
+		}
+		
+		public function backward():void
+		{
+			_backwardCallback();
 		}
 		
 	}

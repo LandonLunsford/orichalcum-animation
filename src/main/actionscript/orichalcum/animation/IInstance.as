@@ -4,9 +4,8 @@ package orichalcum.animation
 	
 	public interface IInstance 
 	{
-		
-		function invoke( forward:Boolean ):*;
-		
+		function forward():void;
+		function backward():void;
 	}
 	
 }

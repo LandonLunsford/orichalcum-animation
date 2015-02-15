@@ -1,5 +1,6 @@
 package orichalcum.animation 
 {
+	import flash.utils.Dictionary;
 	
 	internal class Integrators 
 	{
@@ -91,14 +92,6 @@ package orichalcum.animation
 			}
 		}
 		
-		/**
-		 * 
-		 * @param	instancesOrIntervals
-		 * @param	iterationDuration
-		 * @param	previousPosition
-		 * @param	currentPosition
-		 * @param	forward
-		 */
 		private static function _integrate_unoptimized(
 			instancesOrIntervals:Array,
 			iterationDuration:Number,
@@ -164,7 +157,9 @@ package orichalcum.animation
 					)
 				))
 				{
-					x.instance.invoke( forward );
+					forward
+						? x.instance.forward()
+						: x.instance.backward();
 				}
 				else if (x.interval)
 				{
@@ -196,8 +191,7 @@ package orichalcum.animation
 						(p > previousPosition && p < currentPosition) || ((p == 0 && p == previousPosition) || (p != 0 && p == currentPosition))
 					))
 					{
-						//x.instance.forward();
-						x.instance.invoke( forward );
+						x.instance.forward();
 					}
 					else if (x.interval)
 					{
@@ -218,8 +212,7 @@ package orichalcum.animation
 						(p > currentPosition && p < previousPosition) || ((p == iterationDuration && p == previousPosition) || (p != iterationDuration && p == currentPosition))
 					))
 					{
-						//x.instance.backward();
-						x.instance.invoke( forward );
+						x.instance.backward();
 					}
 					else if (x.interval)
 					{
@@ -228,12 +221,183 @@ package orichalcum.animation
 					}
 				}
 			}
+		}
+		
+		/*
+			Stable v1
+			Deficiencies:
+			1. no delay/repeatDelay/postDelay
+			2. repeat/reverse callbacks will not be able to read the position of the tween at the time of the callback.
+		 */
+		public static function tweenIntegrator(tween:Tween):void
+		{
+			tween.initialize();
 			
-			/*
-				Execute the instance if it is within the elapse time range
-				or if it is the initial interpolation and it is at the start
-			 */
+			var currentPosition:Number = tween._position;
+			var previousPosition:Number = tween._previousPosition;
+			var wave:Boolean = tween._wave;
+			var iterationDuration:Number = tween._duration;
+			var length:Number = tween.length();
 			
+			var deltaPosition:Number = currentPosition - previousPosition;
+			var scaledIterationDuration:Number = wave ? iterationDuration * 0.5 : iterationDuration;
+			var forward:Boolean = deltaPosition > 0;
+			var currentSpan:int = currentPosition / scaledIterationDuration;
+			var previousSpan:int = previousPosition / scaledIterationDuration;
+			var projectedCurrentPosition:Number = currentPosition - scaledIterationDuration * currentSpan;
+			var projectedPreviousPosition:Number = previousPosition - scaledIterationDuration * currentSpan;
+			var deltaSpan:int = currentSpan - previousSpan;
+			var spanStep:int = deltaPosition > 0 ? 1 : -1;
+			var reversed:Boolean = wave && ((currentSpan & 1) == 1);
+			var ratio:Number;
+			var completed:Boolean;
+			
+			if (forward)
+			{
+				completed = currentPosition == length;
+				if (completed)
+				{
+					ratio = wave ? 0 : 1;
+				}
+				else if (currentPosition == 0)
+				{
+					ratio = 0;
+				}
+				else if (scaledIterationDuration == 0) // duration here = duration+delay
+				{
+					ratio = 1;
+				}
+				else
+				{
+					ratio = tween._ease( projectedCurrentPosition / scaledIterationDuration );
+					if (reversed)
+					{
+						ratio = 1 - ratio;
+					}
+				}
+				
+				if (previousPosition == 0)
+				{
+					tween._started.forward();
+				}
+				tween._changing.forward();
+				integrateProperties(tween, ratio, completed);
+				completed || integrateRepeatsAndReversals(
+					tween, currentSpan, deltaSpan, wave, tween._repeated.forward, tween._reversed.forward);
+				tween._changed.forward();
+				if (currentPosition == length)
+				{
+					tween._completed.forward();
+					//tween.pause();
+				}
+			}
+			else
+			{
+				completed = currentPosition == 0;
+				if (completed)
+				{
+					ratio = 0; // diff w/ forward
+				}
+				else if (currentPosition == 0)
+				{
+					ratio = 0;
+				}
+				else if (scaledIterationDuration == 0) // duration here = duration+delay
+				{
+					ratio = 1;
+				}
+				else
+				{
+					ratio = tween._ease( projectedCurrentPosition / scaledIterationDuration );
+					if (reversed)
+					{
+						ratio = 1 - ratio;
+					}
+				}
+				
+				if (previousPosition == length)
+				{
+					tween._completed.backward();
+				}
+				tween._changing.backward();
+				integrateProperties(tween, ratio, completed);
+				completed || integrateRepeatsAndReversals(
+					tween, currentSpan, -deltaSpan, wave, tween._repeated.backward, tween._reversed.backward);
+				tween._changed.backward();
+				if (completed)
+				{
+					tween._started.backward();
+					//tween.pause();
+				}
+			}
+		}
+		
+		static private function integrateProperties(tween:Tween, ratio:Number, completed:Boolean):void 
+		{
+			var a:*, b:*,
+				value:*,
+				valueCandidate:*,
+				plugin:IPlugin,
+				property:String,
+				plugins:Array,
+				isNumber:Boolean,
+				target:Object = tween._target,
+				to:Object = tween._to,
+				from:Object = tween._from,
+				pluginsByProperty:Dictionary = tween._pluginsByProperty;
+			
+			for (property in to)
+			{
+				a = from[property];
+				b = to[property];
+				isNumber = typeof(a) === 'number';
+				
+				if (a == b || ratio == 0 || ratio == 1 || !isNumber)
+				{
+					value = ratio == 1 ? b : a;
+				}
+				else if (isNumber)
+				{
+					value = a + (b - a) * ratio;
+				}
+				for each(plugin in pluginsByProperty[property])
+				{
+					valueCandidate = plugin.tween(tween, property, value, a, b, ratio, completed);
+					
+					if (valueCandidate !== undefined)
+					{
+						value = valueCandidate;
+					}
+				}
+				if (value !== undefined)
+				{
+					target[property] = value;
+				}
+			}
+		}
+		
+		private static function integrateRepeatsAndReversals(
+			tween:Tween, currentSpan:int, deltaSpan:int, wave:Boolean, repeated:Function, reversed:Function):void
+		{
+			var x:int = deltaSpan, a:Number = tween._position;
+			if (wave)
+			{
+				while (x > 0)
+				{
+					((currentSpan + x) & 1) == 1
+						? repeated()
+						: reversed();
+					x--;
+				}
+			}
+			else
+			{
+				while (x > 0)
+				{
+					repeated();
+					x--;
+				}
+			}
 		}
 		
 	}

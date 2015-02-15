@@ -1,45 +1,45 @@
 package orichalcum.animation 
 {
-	import flash.errors.IllegalOperationError;
 	
-	public class Timeline implements IInterval
+	public class Timeline extends TransformableInterval
 	{
 		
 		internal var _insertionPosition:Number = 0;
-		internal var _previousPosition:Number = 0;
-		internal var _position:Number = 0;
-		internal var _duration:Number = 0;
-		internal var _iterations:int = 1;
-		internal var _wave:Boolean;
 		internal var _children:Array = [];
 		internal var _integrator:Function;
 		
 		public function Timeline(...instancesAndIntervalsAndDirectives) 
 		{
-			_updateIntegrator();
+			_determineOptimalIntegrationStrategy();
 			add.apply(this, instancesAndIntervalsAndDirectives);
 		}
 		
-		public function add(...instancesAndIntervalsAndDirectives):void
+		public function add(...args):void
 		{
-			for each(var x:* in instancesAndIntervalsAndDirectives)
+			if (args.length == 0) return;
+			
+			var position:Number = args[0] is Number ? args[0] : insertionPosition;
+			
+			for each(var x:* in args)
 			{
 				if (x is IInstance)
 				{
-					//trace('add IInstance', x);
-					_children.push(new TimelineEntry(insertionPosition, x));
+					_children.push(new TimelineEntry(position, x));
 				}
 				else if (x is IInterval)
 				{
-					//trace('add IInterval', x);
-					_children.push(new TimelineEntry(insertionPosition, x));
+					_children.push(new TimelineEntry(position, x));
+					insertionPosition = Math.max(insertionPosition, position + x.length());
 				}
 				else if (x is IDirective)
 				{
-					//trace('add IDirective', x);
 					(x as IDirective).apply(this);
 				}
-			}
+				else if ('length' in x)
+				{
+					add.apply(this, x);
+				}
+			} 
 		}
 		
 		internal function get insertionPosition():Number
@@ -58,126 +58,38 @@ package orichalcum.animation
 			}
 		}
 		
-		public function position(value:* = null):*
+		override public function iterations(value:* = undefined):*
 		{
-			if (value == null)
+			const result:* = super.iterations.apply(this, arguments);
+			if (arguments.length != 0)
 			{
-				return _position;
+				_determineOptimalIntegrationStrategy();
 			}
-			
-			/*
-				Compute length once
-			 */
-			const length:Number = length();
-			
-			/*
-				Put value into a valid state
-			 */
-			value = Mathematics.clamp(Number(value), 0, length);
-			
-			/*
-				Do nothing if the position has not changed
-			 */
-			if (_position == value) return;
-			
-			/*
-				Oddity of callback integration algorithms
-				Effectively widens the integration span to enclude polar coordinates.
-			 */
-			//_previousPosition = _position == 0
-				//? -Mathematics.EPSILON
-				//: _position == length
-					//? length + Mathematics.EPSILON
-					//: _position;
-			
-			/*
-				Update current position & previous position state
-			 */
-			_previousPosition = _position;
-			_position = value;
-			
-			// guarantee
-			//_previousPosition = Math.floor(_previousPosition);
-			//_position = Math.floor(_position);
-			
-			/*
-				Perform integration over the timeline
-				This includes invoking instances and positioning intervals
-			 */
+			return result;
+		}
+		
+		override public function wave(value:* = undefined):*
+		{
+			const result:* = super.wave.apply(this, arguments);
+			if (arguments.length != 0)
+			{
+				_determineOptimalIntegrationStrategy();
+			}
+			return result;
+		}
+		
+		private function _determineOptimalIntegrationStrategy():void
+		{
+			_integrator = _iterations > 1
+				? _wave ? Integration.timeline_multiIteration_wave
+					: Integration.timeline_multiIteration_waveless
+				: _wave ? Integration.timeline_signleIteration_wave
+					: Integration.timeline_signleIteration_waveless;
+		}
+		
+		override protected function integrate():void
+		{
 			_integrator(this);
-			
-			return this;
-		}
-		
-		public function progress(value:* = null):*
-		{
-			if (value == null)
-			{
-				return length() == 0 ? 0 : _position / length();
-			}
-			//trace('set p', Mathematics.clamp(Number(value), 0, 1), length());
-			return this.position(length() * Mathematics.clamp(Number(value), 0, 1));
-		}
-		
-		public function duration(value:* = null):*
-		{
-			if (value == null)
-			{
-				return _duration;
-			}
-			_duration = Math.max(0, Number(value));
-			return this;
-		}
-		
-		public function iterations(value:* = null):*
-		{
-			if (value == null)
-			{
-				return _iterations;
-			}
-			_iterations = Math.max(1, int(value));
-			_updateIntegrator();
-			return this;
-		}
-		
-		public function wave(value:* = null):*
-		{
-			if (value == null)
-			{
-				return _wave;
-			}
-			_wave = Boolean(value);
-			_updateIntegrator();
-			return this;
-		}
-		
-		public function length(value:* = null):*
-		{
-			if (value == null)
-			{
-				return _iterations * _duration;
-			}
-			
-			throw new IllegalOperationError('not yet supported - requires scaling all positions including the current position');
-		}
-		
-		private function _updateIntegrator():void
-		{
-			//_integrator = _iterations > 1
-				//? _wave
-					//? Integrators.multiIterationWaveIntegrator
-					//: Integrators.multiIterationWavelessIntegrator
-				//: _wave
-					//? Integrators.oneIterationWaveIntegrator
-					//: Integrators.oneIterationWavelessIntegrator;
-					_integrator = Integrators.multiIterationWaveIntegrator;
-		}
-		
-		public function dump():String
-		{
-			return '[Timeline]{position: ' + _position
-				+ ', previousPosition: ' + _previousPosition
-				+ '}';
 		}
 		
 	}

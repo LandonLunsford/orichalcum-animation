@@ -4,17 +4,17 @@ package orichalcum.animation
 	public interface IInterval 
 	{
 		
-		function position( value:* = null ):*;
+		function position( value:* = undefined ):*;
 		
-		function progress( value:* = null ):*;
+		function progress( value:* = undefined ):*;
 		
-		function duration( value:* = null ):*;
+		function duration( value:* = undefined ):*;
 		
-		function iterations( value:* = null ):*;
+		function iterations( value:* = undefined ):*;
 		
-		function wave( value:* = null ):*;
+		function wave( value:* = undefined ):*;
 		
-		function length( value:* = null ):*;
+		function length( value:* = undefined ):*;
 		
 	}
 	

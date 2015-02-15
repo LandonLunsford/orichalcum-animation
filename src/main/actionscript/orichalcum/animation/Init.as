@@ -13,10 +13,17 @@ package orichalcum.animation
 			_properties = properties;
 		}
 		
-		/*
-		 * Probably needs plugin data too, just a guess
-		 */
-		public function invoke(forward:Boolean):* 
+		public function forward():void 
+		{
+			setProperties();
+		}
+		
+		public function backward():void
+		{
+			setProperties();
+		}
+		
+		private function setProperties():void
 		{
 			for (var propertyName:String in _properties)
 			{
@@ -24,7 +31,7 @@ package orichalcum.animation
 					May want to throw more informational error
 					than flashes cryptic one if this goes wrong.
 				 */
-				target[propertyName] = _properties[propertyName];
+				_target[propertyName] = _properties[propertyName];
 			}
 		}
 	}

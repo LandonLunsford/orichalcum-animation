@@ -3,10 +3,16 @@ package orichalcum.animation
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.geom.ColorTransform;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import orichalcum.animation.factory.call;
+	import orichalcum.animation.factory.init;
+	import orichalcum.animation.factory.parallel;
+	import orichalcum.animation.factory.sequence;
+	import orichalcum.animation.factory.stagger;
 	import orichalcum.animation.factory.timeline;
+	import orichalcum.animation.factory.tween;
 	import orichalcum.animation.factory.wait;
 	import orichalcum.ui.Button;
 	import orichalcum.ui.Slider;
@@ -14,28 +20,75 @@ package orichalcum.animation
 	public class IntervalDemo extends Sprite
 	{
 		
-		private var interval:Timeline;
+		private var interval:IInterval;
 		private var slider:Slider = new Slider;
 		private var dragTarget:Sprite;
 		private var playRate:Number = 0.025;
+		private var target:Button = new Button;
 		
 		public function IntervalDemo() 
 		{
-			//var i:int = 1;
-			var i:int = 2;
+			//var i:int = 9;
+			var i:int = 1;
 			//var w:Boolean = false;
 			var w:Boolean = true;
 			
+			//interval = timeline(
+				//init(target, {x: 300, y:300}),
+				//call(fw('start'), bw('start')),
+				//wait(300),
+				//init(target, {x: 400, y:400}),
+				//call(fw('middle'), bw('middle')),
+				//wait(300),
+				//init(target, {x: 500, y:500}),
+				//call(fw('end'), bw('end'))
+			//)
+			//.iterations(i)
+			//.wave(w)
+			
+			//interval = tween(target)
+				//.to( {
+					//x: stage.stageWidth * 0.75,
+					//y: stage.stageHeight * 0.75
+				//})
+				//.duration(600)
+				//.started(fw('started'), bw('started'))
+				////.changing(fw('changing'), bw('changing'))
+				////.changed(fw('changed'), bw('changed'))
+				//.repeated(fw('repeated'), bw('repeated'))
+				//.reversed(fw('reversed'), bw('reversed'))
+				//.completed(fw('completed'), bw('completed'))
+				//.ease(Ease.quadInOut)
+				//.iterations(i)
+				//.wave(w)
+				//;
+				
 			interval = timeline(
-				call(fw('start'), bw('start')),
-				wait(300),
-				call(fw('middle'), bw('middle')),
-				wait(300),
-				call(fw('end'), bw('end'))
+				init(target, {x: 200, y: 200}),
+				wait(50),
+				sequence(
+					tween(target)
+						.to( { x: 500 } )
+						.duration(50)
+						.completed(fw('1'), bw('1')),
+					tween(target)
+						.to( { y: 500 } )
+						.duration(50)
+						.completed(fw('2'), bw('2')),
+					tween(target)
+						.to( { x: 200 } )
+						.duration(50)
+						.completed(fw('3'), bw('3')),
+					tween(target)
+						.to( { y: 200 } )
+						.duration(50)
+						.completed(fw('4'), bw('4'))
+				),
+				call(fw('parent'))
 			)
 			.iterations(i)
 			.wave(w)
-			
+				
 			slider.x = 100;
 			slider.y = 100;
 			slider.value = 0;
@@ -64,6 +117,10 @@ package orichalcum.animation
 			stage.addEventListener(MouseEvent.CLICK, stage_click);
 			stage.addEventListener(MouseEvent.MOUSE_DOWN, stage_mouseDown);
 			stage.addEventListener(MouseEvent.MOUSE_UP, stage_mouseUp);
+			
+			addChild(target);
+			
+			target.transform.colorTransform = new ColorTransform(1, 1, 1, 1, 128);
 			
 		}
 		
