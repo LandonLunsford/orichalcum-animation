@@ -28,23 +28,27 @@ package orichalcum.animation
 		
 		public function IntervalDemo() 
 		{
-			//var i:int = 9;
-			var i:int = 1;
-			var w:Boolean = false;
-			//var w:Boolean = true;
+			//var i:int = 1;
+			var i:int = 2;
+			//var w:Boolean = false;
+			var w:Boolean = true;
 			
 			//interval = timeline(
 				//init(target, {x: 300, y:300}),
-				//call(fw('start'), bw('start')),
+				//call(fw(' start'), bw(' start')),
 				//wait(300),
 				//init(target, {x: 400, y:400}),
-				//call(fw('middle'), bw('middle')),
+				//call(fw(' middle'), bw(' middle')),
 				//wait(300),
 				//init(target, {x: 500, y:500}),
-				//call(fw('end'), bw('end'))
+				//call(fw(' end'), bw(' end'))
 			//)
 			//.iterations(i)
 			//.wave(w)
+			//.started(fw('started'), bw('started'))
+			//.repeated(fw('repeated'), bw('repeated'))
+			//.reversed(fw('reversed'), bw('reversed'))
+			//.completed(fw('completed'), bw('completed'))
 			
 			//interval = tween(target)
 				//.to( {
@@ -65,30 +69,34 @@ package orichalcum.animation
 				
 			interval = timeline(
 				init(target, {x: 200, y: 200}),
-				//wait(50),
+				wait(50),
 				sequence(
 					tween(target)
 						.to( { x: 500 } )
-						.duration(500)
+						.duration(50)
 						.completed(fw('1'), bw('1')),
 					tween(target)
 						.to( { y: 500 } )
-						.duration(500)
+						.duration(50)
 						.completed(fw('2'), bw('2')),
 					tween(target)
 						.to( { x: 200 } )
-						.duration(500)
+						.duration(50)
 						.completed(fw('3'), bw('3')),
 					tween(target)
 						.to( { y: 200 } )
-						.duration(500)
+						.duration(50)
 						.completed(fw('4'), bw('4'))
 				),
 				call(fw('parent'))
 			)
 			.iterations(i)
 			.wave(w)
-				
+			.started(fw('started'), bw('started'))
+			.repeated(fw('repeated'), bw('repeated'))
+			.reversed(fw('reversed'), bw('reversed'))
+			.completed(fw('completed'), bw('completed'))
+			
 			slider.x = 100;
 			slider.y = 100;
 			slider.value = 0;
