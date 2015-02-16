@@ -130,8 +130,6 @@ package orichalcum.animation
 		
 		internal static function tween_multiIteration_wave(tween:Tween):void
 		{
-			tween.initialize();
-			
 			var currentPosition:Number = tween._position;
 			var previousPosition:Number = tween._previousPosition;
 			var wave:Boolean = tween._wave;
@@ -153,6 +151,10 @@ package orichalcum.animation
 			
 			if (forward)
 			{
+				
+				previousPosition == 0 && tween._started && tween._started.forward();
+				tween._changing && tween._changing.forward();
+				
 				completed = currentPosition == length;
 				if (completed)
 				{
@@ -174,19 +176,16 @@ package orichalcum.animation
 						ratio = 1 - ratio;
 					}
 				}
-				if (previousPosition == 0)
-				{
-					tween._started && tween._started.forward();
-				}
-				tween._changing && tween._changing.forward();
+				
 				tweenProperties(tween, ratio, completed);
 				completed || tweenRepeatsAndReversals(
 					tween,
 					currentSpan,
 					deltaSpan,
-					wave,
 					tween._repeated ? tween._repeated.forward : null,
 					tween._reversed ? tween._reversed.forward : null);
+					
+					
 				tween._changed && tween._changed.forward();
 				if (currentPosition == length)
 				{
@@ -196,6 +195,10 @@ package orichalcum.animation
 			}
 			else
 			{
+				
+				previousPosition == length && tween._completed && tween._completed.backward();
+				tween._changing && tween._changing.backward();
+				
 				completed = currentPosition == 0;
 				if (completed)
 				{
@@ -217,20 +220,14 @@ package orichalcum.animation
 						ratio = 1 - ratio;
 					}
 				}
-				
-				if (previousPosition == length)
-				{
-					tween._completed && tween._completed.backward();
-				}
-				tween._changing && tween._changing.backward();
 				tweenProperties(tween, ratio, completed);
 				completed || tweenRepeatsAndReversals(
 					tween,
 					currentSpan,
 					-deltaSpan,
-					wave,
 					tween._repeated ? tween._repeated.backward : null,
 					tween._reversed ? tween._reversed.backward : null);
+					
 				tween._changed && tween._changed.backward();
 				if (completed)
 				{
@@ -242,6 +239,8 @@ package orichalcum.animation
 		
 		static private function tweenProperties(tween:Tween, ratio:Number, completed:Boolean):void 
 		{
+			tween.initialize();
+			
 			var a:*, b:*,
 				value:*,
 				valueCandidate:*,
@@ -288,12 +287,11 @@ package orichalcum.animation
 			tween:Tween,
 			currentSpan:int,
 			deltaSpan:int,
-			wave:Boolean,
 			repeated:Function,
 			reversed:Function):void
 		{
 			var x:int = deltaSpan, a:Number = tween._position;
-			if (wave)
+			if (tween._wave)
 			{
 				while (x > 0)
 				{
@@ -318,9 +316,6 @@ package orichalcum.animation
 			}
 		}
 		
-		
-//================================================================================================================
-
 		internal static function timeline_signleIteration_waveless(timeline:Timeline):void
 		{
 			timeline_multiIteration_wave(timeline);
@@ -367,8 +362,6 @@ package orichalcum.animation
 				
 				previousPosition == 0 && timeline._started && timeline._started.forward();
 				timeline._changing && timeline._changing.forward();
-				
-				
 				
 				for (var j:int = previousSpan, jf:int = currentSpan + spanStep; j != jf; j += spanStep)
 				{

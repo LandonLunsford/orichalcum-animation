@@ -12,10 +12,24 @@ package orichalcum.animation
 		internal var _ease:Function = Ease.linear;
 		internal var _integrator:Function;
 		internal var _initialized:Boolean;
+		internal var _pluginProperties:Object = {};
+		
+		public function get pluginProperties():Object
+		{
+			return _pluginProperties;
+		}
 		
 		internal function get _pluginsByProperty():Dictionary
 		{
 			return __pluginsByProperty;
+		}
+		
+		private function _assume(a:Object, b:Object):void
+		{
+			for (var property:String in b)
+			{
+				a[property] = _target[property];
+			}
 		}
 		
 		internal function initialize():void
@@ -98,7 +112,8 @@ package orichalcum.animation
 		
 		override protected function integrate():void 
 		{
-			_integrator(this);
+			//_integrator(this);
+			Integration2.integrate(this, Integration2.tweenIntegration);
 		}
 		
 		private function _determineOptimalIntegrationStrategy():void

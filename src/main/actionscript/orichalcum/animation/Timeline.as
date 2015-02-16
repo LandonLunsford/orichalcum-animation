@@ -88,7 +88,9 @@ package orichalcum.animation
 		
 		override protected function integrate():void
 		{
-			_integrator(this);
+			//_integrator(this);
+			
+			Integration2.integrate(this, Integration2.timelineIntegration);
 		}
 		
 	}
