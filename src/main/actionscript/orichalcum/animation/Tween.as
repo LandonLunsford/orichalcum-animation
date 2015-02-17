@@ -2,6 +2,7 @@ package orichalcum.animation
 {
 	import flash.utils.Dictionary;
 	import orichalcum.animation.plugin.IPlugin;
+	import orichalcum.validation.assert;
 	
 	public class Tween extends TransformableInterval
 	{
@@ -16,7 +17,6 @@ package orichalcum.animation
 		
 		public function Tween(target:Object)
 		{
-			Preconditions.assert(target != null, 'Argument "target" must not be null.');
 			_target = target;
 		}
 		

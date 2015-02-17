@@ -61,6 +61,11 @@ package orichalcum.animation
 			}
 		}
 		
+		public function get children():Array 
+		{
+			return _children;
+		}
+		
 		//override public function iterations(value:* = undefined):*
 		//{
 			//const result:* = super.iterations.apply(this, arguments);

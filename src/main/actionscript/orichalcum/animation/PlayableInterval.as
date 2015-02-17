@@ -88,7 +88,7 @@ package orichalcum.animation
 		
 		override protected function integrate():void 
 		{
-			Integration2.integrate(this, Functions.NOOP);
+			Integration2.integrate(this, Functions.VOID);
 		}
 		
 		private function enterFrame(event:Event):void
