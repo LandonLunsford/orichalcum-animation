@@ -7,11 +7,17 @@ package orichalcum.animation
 	public class PlayableInterval extends ListenableInterval
 	{
 		
-		private var _isPlaying:Boolean;
+		internal var _isPlaying:Boolean;
+		internal var _positionsByLabel:Object;
 		
 		public function PlayableInterval()
 		{
-			//play();
+			play();
+		}
+		
+		internal function get positionsByLabel():Object
+		{
+			return _positionsByLabel ||= {};
 		}
 		
 		public function isPlaying(value:* = undefined):*
@@ -22,7 +28,6 @@ package orichalcum.animation
 			}
 			if (_isPlaying == value) return;
 			_isPlaying = value;
-			
 			// the reason against doing this is play/pause will re-order the interval...
 			_isPlaying ? Clock.dispatcher.addEventListener(Event.ENTER_FRAME, enterFrame)
 				: Clock.dispatcher.removeEventListener(Event.ENTER_FRAME, enterFrame);
@@ -55,6 +60,11 @@ package orichalcum.animation
 			return goto(0).pause();
 		}
 		
+		public function end():*
+		{
+			return goto(length()).pause();
+		}
+		
 		public function goto(positionOrLabel:*):*
 		{
 			if (positionOrLabel is Number)
@@ -63,14 +73,22 @@ package orichalcum.animation
 			}
 			else if (positionOrLabel is String)
 			{
-				// lookup in labels
-				throw new IllegalOperationError('not yet supported');
+				if (!(positionOrLabel in positionsByLabel))
+				{
+					throw new ArgumentError('Interval has no label with name "' + positionOrLabel + '"');
+				}
+				position(positionsByLabel[positionOrLabel]);
 			}
 			else
 			{
 				throw new ArgumentError('Argument "positionOrLabel" must be of type number or string.');
 			}
 			return this;
+		}
+		
+		override protected function integrate():void 
+		{
+			Integration2.integrate(this, Functions.NOOP);
 		}
 		
 		private function enterFrame(event:Event):void

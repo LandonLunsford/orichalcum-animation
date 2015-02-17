@@ -6,11 +6,11 @@ package orichalcum.animation
 		
 		internal var _insertionPosition:Number = 0;
 		internal var _children:Array = [];
-		internal var _integrator:Function;
+		//internal var _integrator:Function;
 		
 		public function Timeline(...instancesAndIntervalsAndDirectives) 
 		{
-			_determineOptimalIntegrationStrategy();
+			//_determineOptimalIntegrationStrategy();
 			add.apply(this, instancesAndIntervalsAndDirectives);
 		}
 		
@@ -33,6 +33,10 @@ package orichalcum.animation
 				else if (x is IDirective)
 				{
 					(x as IDirective).apply(this);
+				}
+				else if (x is String)
+				{
+					positionsByLabel[x] = insertionPosition;
 				}
 				else if ('length' in x)
 				{
@@ -57,41 +61,39 @@ package orichalcum.animation
 			}
 		}
 		
-		override public function iterations(value:* = undefined):*
-		{
-			const result:* = super.iterations.apply(this, arguments);
-			if (arguments.length != 0)
-			{
-				_determineOptimalIntegrationStrategy();
-			}
-			return result;
-		}
-		
-		override public function wave(value:* = undefined):*
-		{
-			const result:* = super.wave.apply(this, arguments);
-			if (arguments.length != 0)
-			{
-				_determineOptimalIntegrationStrategy();
-			}
-			return result;
-		}
-		
-		private function _determineOptimalIntegrationStrategy():void
-		{
-			_integrator = _iterations > 1
-				? _wave ? Integration.timeline_multiIteration_wave
-					: Integration.timeline_multiIteration_waveless
-				: _wave ? Integration.timeline_signleIteration_wave
-					: Integration.timeline_signleIteration_waveless;
-		}
+		//override public function iterations(value:* = undefined):*
+		//{
+			//const result:* = super.iterations.apply(this, arguments);
+			//if (arguments.length != 0)
+			//{
+				//_determineOptimalIntegrationStrategy();
+			//}
+			//return result;
+		//}
+		//
+		//override public function wave(value:* = undefined):*
+		//{
+			//const result:* = super.wave.apply(this, arguments);
+			//if (arguments.length != 0)
+			//{
+				//_determineOptimalIntegrationStrategy();
+			//}
+			//return result;
+		//}
 		
 		override protected function integrate():void
 		{
-			//_integrator(this);
-			
 			Integration2.integrate(this, Integration2.timelineIntegration);
 		}
+		
+		//private function _determineOptimalIntegrationStrategy():void
+		//{
+			//_integrator = _iterations > 1
+				//? _wave ? Integration.timeline_multiIteration_wave
+					//: Integration.timeline_multiIteration_waveless
+				//: _wave ? Integration.timeline_signleIteration_wave
+					//: Integration.timeline_signleIteration_waveless;
+		//}
 		
 	}
 
