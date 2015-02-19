@@ -6,11 +6,11 @@ package orichalcum.animation
 		
 		internal var _insertionPosition:Number = 0;
 		internal var _children:Array = [];
-		//internal var _integrator:Function;
+		internal var _integration:Function;
 		
 		public function Timeline(...instancesAndIntervalsAndDirectives) 
 		{
-			//_determineOptimalIntegrationStrategy();
+			_integration = Integration.getOptimalIntegrationStrategy(this);
 			add.apply(this, instancesAndIntervalsAndDirectives);
 		}
 		
@@ -66,39 +66,30 @@ package orichalcum.animation
 			return _children;
 		}
 		
-		//override public function iterations(value:* = undefined):*
-		//{
-			//const result:* = super.iterations.apply(this, arguments);
-			//if (arguments.length != 0)
-			//{
-				//_determineOptimalIntegrationStrategy();
-			//}
-			//return result;
-		//}
-		//
-		//override public function wave(value:* = undefined):*
-		//{
-			//const result:* = super.wave.apply(this, arguments);
-			//if (arguments.length != 0)
-			//{
-				//_determineOptimalIntegrationStrategy();
-			//}
-			//return result;
-		//}
-		
-		override protected function integrate():void
+		override public function iterations(value:* = undefined):*
 		{
-			Integration2.integrate(this, Integration2.timelineIntegration);
+			const result:* = super.iterations.apply(this, arguments);
+			if (arguments.length != 0)
+			{
+				_integration = Integration.getOptimalIntegrationStrategy(this);
+			}
+			return result;
 		}
 		
-		//private function _determineOptimalIntegrationStrategy():void
-		//{
-			//_integrator = _iterations > 1
-				//? _wave ? Integration.timeline_multiIteration_wave
-					//: Integration.timeline_multiIteration_waveless
-				//: _wave ? Integration.timeline_signleIteration_wave
-					//: Integration.timeline_signleIteration_waveless;
-		//}
+		override public function wave(value:* = undefined):*
+		{
+			const result:* = super.wave.apply(this, arguments);
+			if (arguments.length != 0)
+			{
+				_integration = Integration.getOptimalIntegrationStrategy(this);
+			}
+			return result;
+		}
+		
+		override internal function integrate():void
+		{
+			Integration.integrate(this, _integration);
+		}
 		
 	}
 

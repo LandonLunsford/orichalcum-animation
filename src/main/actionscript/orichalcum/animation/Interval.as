@@ -100,7 +100,7 @@ package orichalcum.animation
 			//return this;
 		//}
 		
-		protected function integrate():void 
+		internal function integrate():void 
 		{
 			/*
 				Template method

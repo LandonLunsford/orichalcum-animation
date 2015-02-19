@@ -12,12 +12,11 @@ package orichalcum.animation
 		
 		public static function integrate(interval:PlayableInterval, integrator:Function):void
 		{
-			const currentPosition:Number = interval._position,
+			var currentPosition:Number = interval._position,
 				previousPosition:Number = interval._previousPosition,
 				forward:Boolean = currentPosition - previousPosition > 0,
-				length:Number = interval.length();
-				
-			var completed:Boolean;
+				length:Number = interval.length(),
+				completed:Boolean;
 			
 			if (forward)
 			{
@@ -35,6 +34,7 @@ package orichalcum.animation
 				interval._changed && interval._changed.forward();
 				if (completed)
 				{
+					
 					interval.pause();
 					interval._completed && interval._completed.forward();
 				}
@@ -61,49 +61,62 @@ package orichalcum.animation
 			}
 		}
 		
-		public static function timelineIntegration(interval:Timeline, forward:Boolean, completed:Boolean, length:Number, repeated:Function, reversed:Function):void
+		public static function timelineIntegration(timeline:Timeline, forward:Boolean, completed:Boolean, length:Number, repeated:Function, reversed:Function):void
 		{
 			// keep variables close
-			const currentPosition:Number = interval._position;
-			const previousPosition:Number = interval._previousPosition;
-			const iterationDuration:Number = interval._duration;
-			const wave:Boolean = interval._wave;
+			const currentPosition:Number = timeline._position;
+			const previousPosition:Number = timeline._previousPosition;
+			const iterationDuration:Number = timeline._duration;
+			const instancesOrIntervals:Array = timeline._children;
+			const wave:Boolean = timeline._wave;
 			const scaledIterationDuration:Number = wave ? iterationDuration * 0.5 : iterationDuration;
 			
 			// loop setup
-			const currentSpan:int = currentPosition / scaledIterationDuration;
-			const previousSpan:int = previousPosition / scaledIterationDuration;
-			const deltaSpan:int = currentSpan - previousSpan;
-			const spanStep:int = currentPosition - previousPosition > 0 ? 1 : -1;
+			const currentSpan:int = currentPosition / scaledIterationDuration >> 0;
+			const previousSpan:int = previousPosition / scaledIterationDuration >> 0;
+			const spanStep:int = forward ? 1 : -1;
 			const totalSpans:int = int(wave ? (length * 2) / iterationDuration : length / iterationDuration);
+			
+			var i:int,
+				iE:int,
+				child:TimelineEntry,
+				childInterval:Interval,
+				p:Number,
+				projectedCurrentPosition:Number,
+				projectedPreviousPosition:Number,
+				reverseSpan:Boolean,
+				forward2:Boolean;
 			
 			for (var j:int = previousSpan, jf:int = currentSpan + spanStep; j != jf; j += spanStep)
 			{
-				var reverseSpan:Boolean = wave && ((j & 1) == 1);
-				var forward2:Boolean = forward ? !reverseSpan : reverseSpan;
-				var projectedCurrentPosition:Number = currentPosition - scaledIterationDuration * j;
-				var projectedPreviousPosition:Number = previousPosition - scaledIterationDuration * j;
-				if (reverseSpan)
-				{
-					projectedCurrentPosition = scaledIterationDuration - projectedCurrentPosition;
-					projectedPreviousPosition = scaledIterationDuration - projectedPreviousPosition;
-				}
+				projectedCurrentPosition = currentPosition - scaledIterationDuration * j;
+				projectedPreviousPosition = previousPosition - scaledIterationDuration * j;
 				if (wave)
 				{
+					reverseSpan = ((j & 1) == 1);
+					if (reverseSpan)
+					{
+						projectedCurrentPosition = scaledIterationDuration - projectedCurrentPosition;
+						projectedPreviousPosition = scaledIterationDuration - projectedPreviousPosition;
+					}
 					projectedCurrentPosition *= 2;
 					projectedPreviousPosition *= 2;
+					forward2 = forward ? !reverseSpan : reverseSpan;
+				}
+				else
+				{
+					forward2 = forward;
 				}
 				
-				var i:int, b:int, x:TimelineEntry, p:Number, instancesOrIntervals:Array = interval._children;
 				if (forward2)
 				{
-					b = instancesOrIntervals.length;
-					for (i = 0; i != b; i += 1)
+					iE = instancesOrIntervals.length;
+					for (i = 0; i != iE; i += 1)
 					{
-						x = instancesOrIntervals[i];
-						p = x.position;
+						child = instancesOrIntervals[i];
+						p = child.position;
 
-						if (x.instance
+						if (child.instance
 						&& (
 							(p > projectedPreviousPosition && p < projectedCurrentPosition)
 							||
@@ -114,11 +127,15 @@ package orichalcum.animation
 							)
 						))
 						{
-							x.instance.forward();
+							child.instance.forward();
 						}
-						else if (x.interval)
+						else if (child.interval)
 						{
-							x.interval.position(projectedCurrentPosition - p);
+							// need previous position access
+							childInterval = child.interval;
+							childInterval._previousPosition = Mathematics.clamp(projectedPreviousPosition - p, 0, child.interval.length());
+							childInterval._position = Mathematics.clamp(projectedCurrentPosition - p, 0, child.interval.length());
+							childInterval._position != childInterval._previousPosition && childInterval.integrate();
 						}
 					}
 				}
@@ -126,10 +143,10 @@ package orichalcum.animation
 				{
 					for (i = instancesOrIntervals.length - 1; i != -1; i -= 1)
 					{
-						x = instancesOrIntervals[i];
-						p = x.position;
+						child = instancesOrIntervals[i];
+						p = child.position;
 
-						if (x.instance
+						if (child.instance
 						&& (
 							(p > projectedCurrentPosition && p < projectedPreviousPosition)
 							||
@@ -140,21 +157,23 @@ package orichalcum.animation
 							)
 						))
 						{
-							x.instance.backward();
+							child.instance.backward();
 						}
-						else if (x.interval)
+						else if (child.interval)
 						{
-							x.interval.position(projectedCurrentPosition - p);
+							childInterval = child.interval;
+							childInterval._previousPosition = Mathematics.clamp(projectedPreviousPosition - p, 0, child.interval.length());
+							childInterval._position = Mathematics.clamp(projectedCurrentPosition - p, 0, child.interval.length());
+							childInterval._position != childInterval._previousPosition && childInterval.integrate();
 						}
 					}
 				}
 				
-				// wackness - bad loop setup?
-				const ignoreRepeatsAndReverses:Boolean = forward
-					? j == currentSpan || j + spanStep == totalSpans
-					: j == currentSpan || j == totalSpans;
-				if (ignoreRepeatsAndReverses) continue;
-				
+				// bad loop setup?
+				if (forward
+				? j == currentSpan || j + spanStep == totalSpans
+				: j == currentSpan || j == totalSpans)
+					continue;
 				
 				if (wave && forward2)
 				{
@@ -218,22 +237,31 @@ package orichalcum.animation
 				target:Object = tween._target,
 				to:Object = tween._to,
 				from:Object = tween._from,
-				pluginsByProperty:Dictionary = tween._pluginsByProperty;
+				pluginsByProperty:Dictionary = Tween.plugins.pluginsByProperty;
 			
 			for (property in to)
 			{
 				a = from[property];
 				b = to[property];
-				isNumber = typeof(a) === 'number';
 				
-				if (a == b || ratio == 0 || ratio == 1 || !isNumber)
+				// must go first
+				if (typeof(a) !== 'number')
 				{
 					value = ratio == 1 ? b : a;
 				}
-				else if (isNumber)
+				else if (a == b || ratio == 0)
+				{
+					value = a;
+				}
+				else if (ratio == 1)
+				{
+					value = b;
+				}
+				else 
 				{
 					value = a + (b - a) * ratio;
 				}
+				
 				for each(plugin in pluginsByProperty[property])
 				{
 					valueCandidate = plugin.tween(tween, property, value, a, b, ratio, completed);
@@ -248,33 +276,34 @@ package orichalcum.animation
 				}
 			}
 			
-			if (!completed)
+			if (completed) return;
+			
+			// TODO i suspect this loop to always go forward & not backward in iteration order...
+			var x:int = Math.abs(currentSpan - previousSpan);
+			if (tween._wave)
 			{
-				var x:int = currentSpan - previousSpan;
-				if (tween._wave)
+				while (x > 0)
 				{
-					while (x > 0)
-					{
-						if (((currentSpan + x) & 1) == 1)
-						{
-							repeated && repeated();
-						}
-						else
-						{
-							reversed && reversed();
-						}
-						x--;
-					}
-				}
-				else
-				{
-					while (x > 0)
+					if (((currentSpan + x) & 1) == 1)
 					{
 						repeated && repeated();
-						x--;
 					}
+					else
+					{
+						reversed && reversed();
+					}
+					x--;
 				}
 			}
+			else
+			{
+				while (x > 0)
+				{
+					repeated && repeated();
+					x--;
+				}
+			}
+			
 		}
 		
 	}

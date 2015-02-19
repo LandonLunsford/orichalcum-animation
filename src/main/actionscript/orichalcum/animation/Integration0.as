@@ -2,7 +2,7 @@ package orichalcum.animation
 {
 	import flash.utils.Dictionary;
 	
-	internal class Integrators 
+	internal class Integration0 
 	{
 		
 		

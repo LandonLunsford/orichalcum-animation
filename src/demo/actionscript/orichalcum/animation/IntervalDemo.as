@@ -8,6 +8,7 @@ package orichalcum.animation
 	import flash.text.TextFormat;
 	import orichalcum.animation.factory.call;
 	import orichalcum.animation.factory.init;
+	import orichalcum.animation.factory.label;
 	import orichalcum.animation.factory.parallel;
 	import orichalcum.animation.factory.sequence;
 	import orichalcum.animation.factory.stagger;
@@ -20,18 +21,18 @@ package orichalcum.animation
 	public class IntervalDemo extends Sprite
 	{
 		
-		private var interval:IInterval;
+		private var interval:PlayableInterval;
 		private var slider:Slider = new Slider;
 		private var dragTarget:Sprite;
 		private var playRate:Number = 0.025;
-		private var target:Button = new Button;
+		private var target:Button = new Target;
 		
 		public function IntervalDemo() 
 		{
 			//var i:int = 1;
 			var i:int = 2;
-			//var w:Boolean = false;
-			var w:Boolean = true;
+			var w:Boolean = false;
+			//var w:Boolean = true;
 			
 			//interval = timeline(
 				//init(target, {x: 300, y:300}),
@@ -69,7 +70,7 @@ package orichalcum.animation
 				
 			interval = timeline(
 				init(target, {x: 200, y: 200}),
-				wait(50),
+				//wait(50),
 				sequence(
 					tween(target)
 						.to( { x: 500 } )
@@ -88,6 +89,7 @@ package orichalcum.animation
 						.duration(50)
 						.completed(fw('4'), bw('4'))
 				),
+				label('done'),
 				call(fw('parent'))
 			)
 			.iterations(i)
@@ -96,6 +98,9 @@ package orichalcum.animation
 			.repeated(fw('repeated'), bw('repeated'))
 			.reversed(fw('reversed'), bw('reversed'))
 			.completed(fw('completed'), bw('completed'))
+			.pause();
+			
+			//interval.goto('done') // something pooped. ---- BOTH i2's fail
 			
 			slider.x = 100;
 			slider.y = 100;
@@ -231,4 +236,36 @@ package orichalcum.animation
 		
 	}
 
+}
+import orichalcum.ui.Button;
+
+internal class Target extends Button
+{
+	
+	public function Target()
+	{
+		name = 'demo-target';
+	}
+	
+	override public function get x():Number 
+	{
+		return super.x;
+	}
+	
+	override public function set x(value:Number):void 
+	{
+		//trace('.x =', value);
+		super.x = value;
+	}
+	
+	override public function get y():Number 
+	{
+		return super.y;
+	}
+	
+	override public function set y(value:Number):void 
+	{
+		//trace('.y =', value);
+		super.y = value;
+	}
 }

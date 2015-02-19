@@ -18,9 +18,9 @@ package orichalcum.animation
 			return entry as IInstance;
 		}
 		
-		public function get interval():IInterval
+		public function get interval():Interval
 		{
-			return entry as IInterval;
+			return entry as Interval;
 		}
 		
 	}

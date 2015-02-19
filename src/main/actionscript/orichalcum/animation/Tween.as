@@ -1,23 +1,32 @@
 package orichalcum.animation 
 {
-	import flash.utils.Dictionary;
 	import orichalcum.animation.plugin.IPlugin;
-	import orichalcum.validation.assert;
+	import orichalcum.animation.PluginRepository;
 	
 	public class Tween extends TransformableInterval
 	{
-		internal static const __pluginsByProperty:Dictionary = new Dictionary;
+		
+		/*
+		 * Stateful static - bad practice but terribly convenient
+		 */
+		internal static const plugins:PluginRepository = new PluginRepository;
+		internal var _initialized:Boolean;
 		internal var _target:Object;
 		internal var _to:Object;
 		internal var _from:Object;
 		internal var _ease:Function = Ease.linear;
-		//internal var _integrator:Function;
-		internal var _initialized:Boolean;
-		internal var _pluginProperties:Object = {};
+		internal var _pluginProperties:Object;
+		internal var _integration:Function;
 		
 		public function Tween(target:Object)
 		{
+			_integration = Integration.getOptimalIntegrationStrategy(this);
 			_target = target;
+		}
+		
+		internal function get pluginProperties():Object
+		{
+			return _pluginProperties ||= {};
 		}
 		
 		public function target(value:* = undefined):*
@@ -60,14 +69,29 @@ package orichalcum.animation
 			return this;
 		}
 		
-		override protected function integrate():void 
+		override public function iterations(value:* = undefined):*
 		{
-			Integration2.integrate(this, Integration2.tweenIntegration);
+			const result:* = super.iterations.apply(this, arguments);
+			if (arguments.length != 0)
+			{
+				_integration = Integration.getOptimalIntegrationStrategy(this);
+			}
+			return result;
 		}
 		
-		internal function get pluginProperties():Object
+		override public function wave(value:* = undefined):*
 		{
-			return _pluginProperties;
+			const result:* = super.wave.apply(this, arguments);
+			if (arguments.length != 0)
+			{
+				_integration = Integration.getOptimalIntegrationStrategy(this);
+			}
+			return result;
+		}
+		
+		override internal function integrate():void 
+		{
+			Integration.integrate(this, _integration);
 		}
 		
 		internal function initialize():void
@@ -93,12 +117,15 @@ package orichalcum.animation
 				b = (_to[property] ||= (property in _target ? _target[property] : undefined));
 				
 				value = a;
-				for each(var plugin:IPlugin in _pluginsByProperty[property])
+				for each(var plugin:IPlugin in plugins.pluginsByProperty[property])
 				{
+					if (!plugin.supports(target))
+						continue;
+					
 					valueCandidate = plugin.init(this, property, a);
 					if (valueCandidate !== undefined) value = valueCandidate;
 				}
-				if (value !== undefined) _target[property] = value;
+				if (property in target && value !== undefined) _target[property] = value;
 			}
 		}
 		
@@ -106,19 +133,6 @@ package orichalcum.animation
 		{
 			_initialized = false;
 		}
-		
-		internal function get _pluginsByProperty():Dictionary
-		{
-			return __pluginsByProperty;
-		}
-		
-		//private function _assume(a:Object, b:Object):void
-		//{
-			//for (var property:String in b)
-			//{
-				//a[property] = _target[property];
-			//}
-		//}
 		
 	}
 
